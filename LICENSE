@@ -1,16 +1,20 @@
-MIT License
+Copyright © 2026 Maritime Credential Integrity Group LLC
+All rights reserved.
 
-Copyright (c) 2026 Charles
+This software and its associated source files, documentation, and assets
+(the "Software") are the proprietary and confidential property of
+Maritime Credential Integrity Group LLC.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Unauthorized copying, modification, distribution, or use of the Software,
+in whole or in part, via any medium, is strictly prohibited without the prior
+written permission of Maritime Credential Integrity Group LLC.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This license applies to the original work authored on behalf of
+Maritime Credential Integrity Group LLC. It does NOT grant any rights in
+third-party data, content, trademarks, or services that the Software accesses
+or references. See THIRD_PARTY_NOTICES.md for those sources and their terms.
+Third-party fishing-report content is the property of its respective
+publishers and is not distributed as part of this repository.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

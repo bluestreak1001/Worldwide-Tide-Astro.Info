@@ -147,22 +147,44 @@ to a waters class, and distills everything to a ~5 KB JSON. The schema is
 documented by `data/li_report.sample.json`. The live `data/li_report.json` is
 **gitignored** (it contains third-party content — host it, don't redistribute).
 
-### 2. Host `li_report.json` somewhere the Pico can reach
+### 2. Host `li_report.json` where the Pico can reach it
 
-A small web server on the same Pi, a private gist, or any static host works.
-Refresh it on a schedule (the reports update roughly weekly), e.g. a cron job:
+Host the distilled feed **outside this repository** (it contains third-party
+content — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). A **GitHub Gist**
+is the simplest internet-reachable option and works from any harbor, not just a
+home LAN:
 
-```cron
-# Re-scrape every day at 6am
-0 6 * * *  cd /path/to/Worldwide-Tide-Astro.Info && python3 tools/li_report_scraper.py
+```bash
+# one-time: create the gist
+gh gist create data/li_report.json
+
+# daily refresh (cron) — re-scrape, then update the same gist
+0 6 * * *  cd /path/to/Worldwide-Tide-Astro.Info \
+  && python3 tools/li_report_scraper.py \
+  && gh gist edit <GIST_ID> data/li_report.json
 ```
 
 ### 3. Point the Pico at it
 
-In `secrets.py`:
+In `secrets.py`, use the gist's **raw** URL:
 
 ```python
-REPORT_FEED_URL = "http://192.168.1.x:8000/li_report.json"   # or your host
+REPORT_FEED_URL = "https://gist.githubusercontent.com/<user>/<id>/raw/li_report.json"
 ```
 
-Leave it `""` to disable the report layer entirely.
+Leave it `""` to disable the report layer entirely. The boating/fishing scores
+work regardless — the report is an optional add-on.
+
+---
+
+## License & Attribution
+
+© 2026 **Maritime Credential Integrity Group LLC** — all rights reserved.
+This is proprietary software; see [LICENSE](LICENSE).
+
+It uses third-party data sources and services (WorldTides, Open-Meteo,
+OpenStreetMap/Nominatim, sunrise-sunset.org, and On The Water for fishing
+reports), each governed by its own terms. Attributions and a commercial-use
+note are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Third-party
+fishing-report content belongs to its publishers and is not distributed with
+this repository.
