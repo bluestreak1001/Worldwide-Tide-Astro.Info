@@ -197,6 +197,78 @@ def display_all(cfg):
             print("  [Weather] Sensor not available")
     except Exception as e:
         print("  [Weather error] " + str(e))
+    display_separator()
+    print("  BOATING & FISHING")
+    display_separator("-")
+    try:
+        import conditions as _cond
+        import solunar as _sol
+        from astro import get_current, get_marine
+        waters = _cond.guess_waters(name, lat, lon)
+        cur = mar = None
+        try: cur = get_current(lat, lon)
+        except Exception as e: print("  [current] " + str(e))
+        try: mar = get_marine(lat, lon)
+        except Exception as e: print("  [marine] " + str(e))
+        cur = cur or {}; mar = mar or {}
+        try:
+            moonrise = astro["moonrise"]; moonset = astro["moonset"]
+            illum = astro["illumination"]
+        except Exception:
+            moonrise = moonset = illum = None
+        sol = _sol.solunar_now(moonrise, moonset, illum, local_hr, mn)
+        try: tide_mv = _cond.tide_movement(tides, utime.time())
+        except Exception: tide_mv = None
+        wave_ft = (round(mar["wave_height_m"] * 3.28084, 1)
+                   if mar.get("wave_height_m") is not None else None)
+        try: press_arrow = wx["trend_arrow"]
+        except Exception: press_arrow = None
+        assess = _cond.assess({
+            "waters": waters,
+            "wind_mph": cur.get("wind_mph"), "gust_mph": cur.get("gust_mph"),
+            "wave_ft": wave_ft, "swell_period_s": mar.get("wave_period"),
+            "weather_code": cur.get("weather_code"),
+            "precip_in": cur.get("precip_in"), "pressure_arrow": press_arrow,
+            "water_temp_f": mar.get("water_temp_f"), "solunar": sol,
+            "tide": tide_mv,
+            "tide_moving": (tide_mv.get("moving") if tide_mv else 0),
+            "month": mo,
+        })
+        b = assess["boating"]; f = assess["fishing"]
+        print("  Waters      : " + assess["waters_label"])
+        print("  Boating Day : " + str(b["score"]) + "/10  " + b["label"] +
+              (("  (" + b["detail"] + ")") if b.get("detail") else ""))
+        for fl in b.get("flags", []):
+            print("    ! " + fl)
+        print("  Fishing Day : " + str(f["score"]) + "/10  " + f["label"])
+        if f.get("window"):
+            print("    " + f["window"])
+        for nt in f.get("notes", []):
+            print("    - " + nt)
+        print("  >> " + assess["verdict"])
+    except Exception as e:
+        print("  [Conditions error] " + str(e))
+    display_separator()
+    print("  LOCAL FISHING REPORT")
+    display_separator("-")
+    try:
+        import conditions as _cond
+        import reports as _rep
+        rep = _rep.get_report(_cond.guess_waters(name, lat, lon))
+        if rep and rep.get("reports"):
+            if rep.get("species"):
+                print("  Biting: " + ", ".join(rep["species"][:6]))
+            for rr in rep["reports"][:2]:
+                where = rr.get("where") or rep.get("label", "")
+                print("  " + where + ": " + rr.get("text", ""))
+            upd = (rep.get("updated") or "")[:10]
+            if rep.get("source"):
+                print("  (" + rep["source"] +
+                      (" - " + upd if upd else "") + ")")
+        else:
+            print("  No local report (set REPORT_FEED_URL in secrets.py).")
+    except Exception as e:
+        print("  [Report error] " + str(e))
     display_separator("=")
     print("  GP15 (Pin 20) = shell refresh  |  Browser = change location")
     display_separator("=")

@@ -309,6 +309,49 @@ def get_forecast(lat, lon):
         })
     return result
 
+def get_current(lat, lon):
+    """
+    Current atmospheric conditions from Open-Meteo (no key, no sensor needed).
+    Supplies wind/gust for the boating score and works even before a BME688 is
+    wired in. Returns {wind_mph, gust_mph, wind_dir, weather_code, precip_in,
+    air_temp_f, humidity} or None.
+    """
+    import urequests
+    url = ("https://api.open-meteo.com/v1/forecast"
+           "?latitude=" + str(round(lat, 4)) +
+           "&longitude=" + str(round(lon, 4)) +
+           "&current=temperature_2m,relative_humidity_2m,precipitation,"
+           "weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m"
+           "&temperature_unit=fahrenheit&wind_speed_unit=mph"
+           "&precipitation_unit=inch&timezone=auto")
+    print("[Current] Fetching Open-Meteo current...")
+    try:
+        r = urequests.get(url, timeout=12)
+        data = r.json()
+        r.close()
+    except Exception as e:
+        print("[Current] " + str(e))
+        return None
+    c = data.get("current", {})
+    if not c:
+        return None
+
+    def wdir(deg):
+        dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+        return dirs[int((deg + 22.5) / 45) % 8]
+
+    wd = c.get("wind_direction_10m")
+    return {
+        "wind_mph":     round(c.get("wind_speed_10m", 0)),
+        "gust_mph":     round(c.get("wind_gusts_10m", 0)),
+        "wind_dir":     wdir(wd) if wd is not None else "--",
+        "weather_code": c.get("weather_code", 0),
+        "precip_in":    round(c.get("precipitation", 0), 2),
+        "air_temp_f":   round(c.get("temperature_2m", 0), 1),
+        "humidity":     round(c.get("relative_humidity_2m", 0)),
+    }
+
+
 def get_marine(lat, lon):
     import urequests
     url = ("https://marine-api.open-meteo.com/v1/marine"

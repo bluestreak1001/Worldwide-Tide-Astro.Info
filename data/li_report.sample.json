@@ -1,0 +1,69 @@
+{
+  "_comment": "SAMPLE schema for the Long Island fishing-report feed. This file uses fictional shops/text to document the format only. Generate the real feed with tools/li_report_scraper.py (it writes data/li_report.json, which is gitignored). Point secrets.REPORT_FEED_URL at wherever you host the real file.",
+  "updated": "2026-07-16T15:05:34+00:00",
+  "scraped_at": "2026-07-16T20:00:00Z",
+  "source": "On The Water - Long Island & NYC Fishing Report",
+  "source_url": "https://onthewater.com/regions/new-york",
+  "areas": {
+    "north-shore": {
+      "label": "LI Sound / North Shore",
+      "species": ["fluke", "porgy", "striped bass", "bluefish"],
+      "reports": [
+        {
+          "where": "Port Jefferson",
+          "who": "Example Bait & Tackle",
+          "text": "Fluke action improving on the flats; porgies stacking up on the rock piles. Bass are on a night bite in the harbor mouth."
+        }
+      ],
+      "summary": "Fluke, Porgy, Striped Bass active. Fluke action improving on the flats."
+    },
+    "south-shore-bays": {
+      "label": "South Shore Bays",
+      "species": ["fluke", "sea bass", "snapper"],
+      "reports": [
+        {
+          "where": "Great South Bay",
+          "who": "Example Charters",
+          "text": "Light-tackle fluke and sea bass in the channels. Snappers thick along the docks for the kids."
+        }
+      ],
+      "summary": "Fluke, Sea Bass, Snapper active. Light-tackle fluke and sea bass in the channels."
+    },
+    "inlets": {
+      "label": "Inlets",
+      "species": ["striped bass", "bluefish"],
+      "reports": [
+        {
+          "where": "Fire Island Inlet",
+          "who": "Example Guide Service",
+          "text": "Bass and blues on the outgoing tide around the jetty. Watch the wind-over-tide chop on a strong ebb."
+        }
+      ],
+      "summary": "Striped Bass, Bluefish active. Bass and blues on the outgoing tide."
+    },
+    "ocean": {
+      "label": "Ocean / Beaches",
+      "species": ["bluefish", "bass", "bonito"],
+      "reports": [
+        {
+          "where": "Montauk",
+          "who": "Example Sportfishing",
+          "text": "Blues filling the rips close to shore; a few bass at first light. Bonito showing on the troll offshore."
+        }
+      ],
+      "summary": "Bluefish, Bass, Bonito active. Blues filling the rips close to shore."
+    },
+    "peconics": {
+      "label": "Peconics / The Forks",
+      "species": ["fluke", "porgy", "weakfish"],
+      "reports": [
+        {
+          "where": "Peconic Bay",
+          "who": "Example Outfitters",
+          "text": "Steady fluke and porgy inshore; a surprise weakfish or two on the drift near the shipping channel."
+        }
+      ],
+      "summary": "Fluke, Porgy, Weakfish active. Steady fluke and porgy inshore."
+    }
+  }
+}

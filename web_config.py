@@ -119,12 +119,66 @@ def _fetch_data(lat, lon, name, tz):
         r["forecast"] = get_forecast(lat,lon)
     except Exception as e:
         r["forecast"] = None
+
+    # --- Boating/Fishing conditions + local waters report ------------------
+    r["waters"] = None; r["conditions"] = None; r["cond_err"] = None
+    r["current"] = None; r["marine"] = None; r["solunar"] = None
+    r["report"] = None
+    try:
+        import conditions as _cond
+        import solunar as _sol
+        from astro import get_current, get_marine
+        waters = _cond.guess_waters(name, lat, lon)
+        r["waters"] = waters
+        try: r["current"] = get_current(lat, lon)
+        except Exception as e: print("[Cond] current: "+str(e))
+        try: r["marine"] = get_marine(lat, lon)
+        except Exception as e: print("[Cond] marine: "+str(e))
+        cur = r["current"] or {}
+        mar = r["marine"] or {}
+        a = r.get("astro") or {}
+        sol = _sol.solunar_now(a.get("moonrise"), a.get("moonset"),
+                               a.get("illumination"), lh, mn)
+        r["solunar"] = sol
+        try: tide_mv = _cond.tide_movement(r.get("tides") or [], utime.time())
+        except Exception: tide_mv = None
+        wx = r.get("weather") or {}
+        wave_ft = None
+        if mar.get("wave_height_m") is not None:
+            wave_ft = round(mar["wave_height_m"] * 3.28084, 1)
+        inp = {
+            "waters": waters,
+            "wind_mph": cur.get("wind_mph"), "gust_mph": cur.get("gust_mph"),
+            "wind_dir": cur.get("wind_dir"), "wave_ft": wave_ft,
+            "swell_period_s": mar.get("wave_period"),
+            "weather_code": cur.get("weather_code"),
+            "precip_in": cur.get("precip_in"),
+            "pressure_arrow": wx.get("trend_arrow"),
+            "water_temp_f": mar.get("water_temp_f"),
+            "solunar": sol, "tide": tide_mv,
+            "tide_moving": (tide_mv.get("moving") if tide_mv else 0),
+            "month": mo,
+        }
+        r["conditions"] = _cond.assess(inp)
+    except Exception as e:
+        r["cond_err"] = str(e)
+    try:
+        import reports as _rep
+        r["report"] = _rep.get_report(r.get("waters"))
+    except Exception as e:
+        print("[Report] "+str(e))
     return r
 
 def _row(label, val, color=""):
     cs = " style=\"color:"+color+"\"" if color else ""
     return ("<tr><td style=\"color:#6a8aaa;padding:7px 0;border-bottom:1px solid #0f1e30\">"+label+
             "</td><td"+cs+" style=\"text-align:right;padding:7px 0;border-bottom:1px solid #0f1e30\">"+str(val)+"</td></tr>")
+
+def _score_color(score):
+    if score >= 7: return "#80d8a0"
+    if score >= 5: return "#f0c040"
+    if score >= 3: return "#f0a040"
+    return "#f07070"
 
 def _build_page(data, lat, lon, query, tz):
     name = data.get("name", query)
@@ -135,6 +189,51 @@ def _build_page(data, lat, lon, query, tz):
     wx   = data.get("weather") or {}
     we   = data.get("wx_err","")
     tzs  = data.get("tz_str","")
+
+    # --- Boating & Fishing scores ---
+    cond = data.get("conditions")
+    cond_html = ""
+    if data.get("cond_err"):
+        cond_html = "<tr><td colspan=2 style=\"color:#f07070\">"+data["cond_err"]+"</td></tr>"
+    elif cond:
+        b = cond["boating"]; f = cond["fishing"]
+        cond_html += _row("Waters", cond.get("waters_label",""))
+        cond_html += _row("Boating Day", str(b["score"])+" / 10 &nbsp; "+b["label"], _score_color(b["score"]))
+        if b.get("detail"):
+            cond_html += _row("", b["detail"])
+        for fl in b.get("flags",[]):
+            cond_html += _row("", "&#9888; "+fl, "#f0a040")
+        cond_html += _row("Fishing Day", str(f["score"])+" / 10 &nbsp; "+f["label"], _score_color(f["score"]))
+        if f.get("window"):
+            cond_html += _row("Best Window", f["window"], "#80d8a0")
+        for nt in f.get("notes",[]):
+            cond_html += _row("", nt, "#6a8aaa")
+        cond_html += ("<tr><td colspan=2 style=\"color:#4a9eff;padding:10px 0 4px;font-weight:bold\">"
+                      +cond.get("verdict","")+"</td></tr>")
+    else:
+        cond_html = "<tr><td colspan=2 style=\"color:#6a8aaa\">Conditions unavailable</td></tr>"
+
+    # --- Local waters fishing report ---
+    rep = data.get("report")
+    report_html = ""
+    if not rep or not rep.get("reports"):
+        report_html = ("<tr><td colspan=2 style=\"color:#6a8aaa\">No local report. "
+                       "Run tools/li_report_scraper.py and set REPORT_FEED_URL in secrets.py.</td></tr>")
+    else:
+        if rep.get("label"):
+            report_html += _row("Area", rep["label"])
+        if rep.get("species"):
+            sp = ", ".join(rep["species"][:6])
+            report_html += _row("Biting", sp[:1].upper()+sp[1:], "#80d8a0")
+        for rr in rep["reports"][:3]:
+            where = rr.get("where") or rep.get("label","")
+            report_html += ("<tr><td colspan=2 style=\"padding:7px 0;border-bottom:1px solid #0f1e30\">"
+                "<span style=\"color:#4a9eff;font-weight:bold\">"+where+"</span> "
+                "<span style=\"color:#c8daf0\">"+rr.get("text","")+"</span></td></tr>")
+        upd = (rep.get("updated") or "")[:10]
+        src = rep.get("source","") or ""
+        report_html += ("<tr><td colspan=2 style=\"color:#2a4a6a;font-size:0.68rem;padding-top:8px\">"
+                        +src+(" &mdash; "+upd if upd else "")+"</td></tr>")
 
     tide_html = ""
     if te:
@@ -221,6 +320,8 @@ def _build_page(data, lat, lon, query, tz):
         "<button class=\"btn save\" onclick=\"saveNow()\">&#10003; Save Location</button>"
         "<button class=\"btn again\" onclick=\"searchAgain()\">&#8634; Search Another</button>"
         "</div>"
+        "<h2>&#9973; Boating &amp; Fishing Day</h2><table>"+cond_html+"</table>"
+        "<h2>&#127907; Local Fishing Report</h2><table>"+report_html+"</table>"
         "<h2>&#127754; Tides</h2><table>"+tide_html+"</table>"
         "<h2>&#127777; Weather</h2><table>"+wx_html+"</table>"
         "<h2>&#128197; Forecast</h2><table>"+fc_html+"</table>"

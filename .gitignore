@@ -6,6 +6,11 @@ config.json
 favorites.json
 pressure_log.json
 
+# Live scraped fishing-report feed (third-party content — host it yourself,
+# don't redistribute). The committed data/li_report.sample.json documents the
+# schema. See tools/li_report_scraper.py.
+data/li_report.json
+
 # MicroPython bytecode cache
 *.mpy
 __pycache__/
